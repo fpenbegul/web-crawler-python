@@ -67,18 +67,16 @@ def webCrawler(url, lista_links, nome_tabela):
                 insere(next_link, nome_tabela)
                 lista_links.append(webCrawler(next_link, lista_links, nome_tabela))
     except:
-        insere("Pagina nao acessivel")
+        insere("Pagina nao acessivel", nome_tabela)
 
 ######## Inicio ########
 
 #Inicializa variaveis
-lista = []
 saida = []
 tabela = "guardaLinks"
 
 #URL de verificação
 url = input("Digite a página web: ")
-#url = 'http://www.saopauloarquitetura.com'
 
 #String de Conexão
 conn, cur = abrirConexaoCloud()
