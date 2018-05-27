@@ -89,8 +89,12 @@ webCrawler(url, saida, tabela)
 
 #Retorna os dados
 links = leituraDados(tabela)
-for x in range(len(links)):
-    print(x, " - ", links[x])
+
+if len(links) == 0:
+    print("Nao foi encontrado nenhum link na pagina informada")
+else:
+    for x in range(len(links)):
+        print(x, " - ", links[x])
 
 resultado = "S"
 fechaConexao(resultado)
