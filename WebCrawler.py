@@ -18,11 +18,12 @@ def abrirConexaoCloud():
                                 user = 'admin',
                                 password = 'KFUQKGVJTVWHXELV',
                                 database = 'postgres')
+        cur = conn.cursor()
+        status = 'Ok'
     except:
         print("Nao foi possivel conectar ao IBM Cloud")
-
-    cur = conn.cursor()
-    return conn, cur
+        status = 'nOk'
+    return conn, cur, status
 
 #Caso o processamento seja efetuado com Sucesso, comita ao final da execução
 def fechaConexao(resultado):
@@ -81,23 +82,30 @@ tabela = "guardaLinks"
 url = input("Digite a página web: ")
 
 #String de Conexão
-conn, cur = abrirConexaoCloud()
+conn, cur, status = abrirConexaoCloud()
 
-#Verifica se a tabela existe
-criaBase(tabela)
-
-#Inicia o Crawler
-webCrawler(url, saida, tabela)
-
-#Retorna os dados
-links = leituraDados(tabela)
-
-if len(links) == 0:
-    print("Nao foi encontrado nenhum link na pagina informada")
+#Verifica se conexao foi realizada com Sucesso
+if status == 'Ok':
+    #Verifica se a tabela existe
+    criaBase(tabela)
+    
+    #Inicia o Crawler
+    webCrawler(url, saida, tabela)
+    
+    #Retorna os dados
+    links = leituraDados(tabela)
+    
+    #Valida retorno do select
+    if len(links) == 0:
+        print("Nao foi encontrado nenhum link na pagina informada")
+    else:
+        for x in range(len(links)):
+            print(x, " - ", links[x])
+     #seta resultado para commit       
+    resultado = "S"
 else:
-    for x in range(len(links)):
-        print(x, " - ", links[x])
-
-resultado = "S"
+    #Realiza Rollback
+    resultado = 'N'
+#Fecha Conexao    
 fechaConexao(resultado)
 print("Fim")
