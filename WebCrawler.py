@@ -39,12 +39,12 @@ def criaBase(nome_tabela):
     if 1 in x:
        cur.execute("TRUNCATE TABLE {0}".format(nome_tabela))
     else:
-       cur.execute("CREATE TABLE " + nome_tabela + " (link text)")
+       cur.execute("CREATE TABLE {0} (link text)".format(nome_tabela))
     conn.commit()
 
     #Insere informações no DB
-def insere(dados):
-    cur.execute("INSERT INTO guardaLinks (link) VALUES ('{0}')".format(dados))
+def insere(dados, nome_tabela):
+    cur.execute("INSERT INTO {0} (link) VALUES ('{1}')".format(nome_tabela, dados))
 
 def leituraDados(tabela):
       cur.execute("SELECT * FROM {0}".format(tabela))
@@ -54,7 +54,7 @@ def leituraDados(tabela):
       return y
 
 #Abre a URL informada, recebe uma lista de Links
-def webCrawler(url, lista_links):
+def webCrawler(url, lista_links, nome_tabela):
     try:
         pagina = urllib.request.urlopen(url)
         #Realiza o parser no HTML da pagina solicitada
@@ -64,8 +64,8 @@ def webCrawler(url, lista_links):
             next_link = x.get('href')
             if next_link not in lista_links:
                 lista_links.append(next_link)
-                insere(next_link)
-                lista_links.append(webCrawler(next_link, lista_links))
+                insere(next_link, nome_tabela)
+                lista_links.append(webCrawler(next_link, lista_links, nome_tabela))
     except:
         insere("Pagina nao acessivel")
 
@@ -77,7 +77,8 @@ saida = []
 tabela = "guardaLinks"
 
 #URL de verificação
-url = input("Digite a página web: ")
+#url = input("Digite a página web: ")
+url = 'http://www.saopauloarquitetura.com'
 
 #String de Conexão
 conn, cur = abrirConexaoCloud()
@@ -86,7 +87,7 @@ conn, cur = abrirConexaoCloud()
 criaBase(tabela)
 
 #Inicia o Crawler
-webCrawler(url, saida)
+webCrawler(url, saida, tabela)
 
 #Retorna os dados
 links = leituraDados(tabela)
