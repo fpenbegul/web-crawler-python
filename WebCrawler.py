@@ -77,8 +77,8 @@ saida = []
 tabela = "guardaLinks"
 
 #URL de verificação
-#url = input("Digite a página web: ")
-url = 'http://www.saopauloarquitetura.com'
+url = input("Digite a página web: ")
+#url = 'http://www.saopauloarquitetura.com'
 
 #String de Conexão
 conn, cur = abrirConexaoCloud()
