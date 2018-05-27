@@ -12,11 +12,11 @@ import re
 #Abre a conexão IBM Cloud
 def abrirConexaoCloud():
     try:
-        conn = psycopg2.connect(host ='HOST',
-                                port = 'PORTA',
-                                user = 'USER',
-                                password = 'SENHA',
-                                database = 'BASE')
+        conn = psycopg2.connect(host='sl-us-south-1-portal.25.dblayer.com',
+                                port = 43023,
+                                user = 'admin',
+                                password = 'KFUQKGVJTVWHXELV',
+                                database = 'postgres')
     except:
         print("Nao foi possivel conectar ao IBM Cloud")
 
@@ -79,6 +79,7 @@ tabela = "guardaLinks"
 
 #URL de verificação
 url = input("Digite a página web: ")
+#url = 'http://www.google.com.br'
 
 #String de Conexão
 conn, cur = abrirConexaoCloud()
