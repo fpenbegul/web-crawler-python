@@ -1,3 +1,5 @@
+#Criado por Duan Nunes Alves da Silva
+#Twitter @duanpsycho
 #HTML Parser
 from bs4 import BeautifulSoup
 #Request para HTML
