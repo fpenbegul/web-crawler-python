@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import urllib.request
 #Conexoes ao Cloud
 import psycopg2
-import ssl
 #Recompile
 import re
 
@@ -79,7 +78,6 @@ tabela = "guardaLinks"
 
 #URL de verificação
 url = input("Digite a página web: ")
-#url = 'http://www.google.com.br'
 
 #String de Conexão
 conn, cur = abrirConexaoCloud()
