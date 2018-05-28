@@ -4,20 +4,19 @@
 from bs4 import BeautifulSoup
 #Request para HTML
 import urllib.request
-#Conexoes ao Cloud
-import psycopg2
 #Recompile
 import re
+#Conexao postgreSQL
+import psycopg2
 
 #Metodos
-#Abre a conexão IBM Cloud
 def abrirConexaoCloud():
     try:
         conn = psycopg2.connect(host='sl-us-south-1-portal.25.dblayer.com',
-                                port = 43023,
-                                user = 'admin',
-                                password = 'KFUQKGVJTVWHXELV',
-                                database = 'postgres')
+                                port=43023,
+                                user='admin',
+                                password='KFUQKGVJTVWHXELV',
+                                database='postgres')
         cur = conn.cursor()
         status = 'Ok'
     except:
@@ -27,34 +26,52 @@ def abrirConexaoCloud():
         status = 'nOk'
     return conn, cur, status
 
-#Fecha conexao se a conexao foi aberta com status ok
-def fechaConexao(status):
+# Fecha conexao se ela foi aberta com status ok
+def fechaConexao(conn, cur, status):
     if status == 'Ok':
-       conn.commit()
-       conn.close()
-       cur.close()
+        conn.commit()
+        conn.close()
+        cur.close()
+        return True
+    elif status == 'nOk':
+        conn.rollback()
+        conn.close()
+        cur.close()
+        return False
 
-#Verifica existencia da tabela, se negativo, cria, se positivo, dropa e cria novamente
-def criaBase(nome_tabela):
-    cur.execute("SELECT 1 FROM information_schema.tables where table_name = lower('{0}')".format(nome_tabela))
-    x = cur.fetchone()
-    if 1 in x:
-       cur.execute("TRUNCATE TABLE {0}".format(nome_tabela))
-    else:
-       cur.execute("CREATE TABLE {0} (link text)".format(nome_tabela))
-    conn.commit()
+# Verifica existencia da tabela, se negativo, cria, se positivo, dropa e cria novamente
+def criaBase(nome_tabela, conn, cur):
+    try:
+        cur.execute("select count(1) from pg_tables where tablename = lower('{0}')".format(nome_tabela))
+        x = cur.fetchone()
+        if 1 in x:
+            cur.execute("TRUNCATE TABLE {0}".format(nome_tabela))
+            conn.commit()
+            return True
+        else:
+            cur.execute("CREATE TABLE {0} (link text)".format(nome_tabela))
+            conn.commit()
+            return True
+    except:
+        print("Nao eh possivel criar a base de dados")
+        return False
 
-#Insere informações no DB
-def insere(dados, nome_tabela):
-    cur.execute("INSERT INTO {0} (link) VALUES ('{1}')".format(nome_tabela, dados))
+# Insere informações no DB
+def insere(nome_tabela, dados):
+        try:
+            cur.execute("INSERT INTO {0} (link) VALUES ('{1}')".format(nome_tabela, dados))
+            return True
+        except:
+            print("Erro durante a insercao")
+            return False
 
-#Consulta DB para retornar os links inseridos
+# Consulta DB para retornar os links inseridos
 def leituraDados(tabela):
-      cur.execute("SELECT * FROM {0}".format(tabela))
-      y = []
-      for x in cur:
-          y.append(x[0])
-      return y
+    cur.execute("SELECT * FROM {0}".format(tabela))
+    y = []
+    for x in cur:
+        y.append(x[0])
+    return y
 
 #Abre a URL informada, recebe uma lista de Links e o nome da tabela
 def webCrawler(url, lista_links, nome_tabela):
@@ -63,47 +80,54 @@ def webCrawler(url, lista_links, nome_tabela):
         #Realiza o parser no HTML da pagina solicitada
         BSoup = BeautifulSoup(pagina, "html.parser", from_encoding="iso-8859-1")
         #Varre o HTML da pagina para identificar outros links existentes
-        for x in BSoup.findAll('a', attrs={'href': re.compile("^http://")}):
+        for x in (BSoup.findAll('a', attrs={'href': re.compile("^http://")}) or BSoup.findAll('a', attrs={'href': re.compile("^https://")})):
             next_link = x.get('href')
+            #Verifica se o link atual não está na lista
             if next_link not in lista_links:
                 lista_links.append(next_link)
-                print(next_link)
-                insere(next_link, nome_tabela)
-                lista_links.append(webCrawler(next_link, lista_links, nome_tabela))
+                valid = insere(nome_tabela, next_link)
+                if valid == True:
+                    lista_links.append(webCrawler(next_link, lista_links, nome_tabela))
+                else:
+                    break
     except:
-        insere("Pagina nao acessivel", nome_tabela)
+        valid = insere(nome_tabela, "Pagina nao acessivel ou nao existe")
 
 ######## Inicio ########
 
-#Inicializa variaveis
-saida = []
+# Inicializa variaveis
+lista_links = []
 tabela = "guardaLinks"
 
-#URL de verificação
+# URL de verificação
 url = input("Ex: http://www.google.com.br \n Digite a página web: \n ")
 
-#String de Conexão
+# String de Conexão
 conn, cur, status = abrirConexaoCloud()
 
-#Verifica se conexao foi realizada com Sucesso
+# Verifica se conexao foi realizada com Sucesso
 if status == 'Ok':
-    #Verifica se a tabela existe
-    criaBase(tabela)
+    # Verifica se a tabela existe
+    valid = criaBase(tabela, conn, cur)
 
-    #Inicia o Crawler
-    webCrawler(url, saida, tabela)
+    if valid == True:
+        # Inicia o Crawler
+        webCrawler(url, lista_links, tabela)
 
-    #Retorna os dados
-    links = leituraDados(tabela)
+        # Retorna os dados
+        links = leituraDados(tabela)
 
-    #Valida retorno do select
-    if len(links) == 0:
-        print("Nao foi encontrado nenhum link na pagina informada")
-    else:
-        for x in range(len(links)):
-            print(x, " - ", links[x])
+        # Valida retorno do select
+        if len(links) == 0:
+            print("Nao foi encontrado nenhum link na pagina informada")
+        else:
+            for x in range(len(links)):
+                print(x, " - ", links[x])
+        # Fecha Conexao
+        fechaConexao(conn, cur, status)
+else:
     # Fecha Conexao
-    fechaConexao(status)
-#fim do If
+    fechaConexao(conn, cur, status)
 
+# fim do If
 print("Fim")
