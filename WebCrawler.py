@@ -12,15 +12,16 @@ import psycopg2
 #Metodos
 def abrirConexaoCloud():
     try:
-        conn = psycopg2.connect(host='sl-us-south-1-portal.25.dblayer.com',
-                                port=43023,
-                                user='admin',
-                                password='KFUQKGVJTVWHXELV',
-                                database='postgres')
+        #Conexao postgreSQL
+        conn = psycopg2.connect(host='SERVIDOR,
+                                port='PORTA',
+                                user='USUARIO',
+                                password='SENHA',
+                                database='BASE')
         cur = conn.cursor()
         status = 'Ok'
     except:
-        print("Nao foi possivel conectar ao IBM Cloud")
+        print("Nao foi possivel conectar")
         conn = []
         cur = []
         status = 'nOk'
